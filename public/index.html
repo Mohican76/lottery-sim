@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a0000">
+    <title>Lottery Bandit 🎰</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
+            color: #ffd700;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #ffd700, 0 0 20px #ff0000; }
+            50% { text-shadow: 0 0 20px #ffd700, 0 0 40px #ff0000; }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        .subtitle {
+            color: #ff6b6b;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        .game-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .game-btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: 3px solid #ffd700;
+            background: linear-gradient(135deg, #8b0000 0%, #ff0000 100%);
+            color: #ffd700;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .game-btn:hover, .game-btn.active {
+            background: linear-gradient(135deg, #ff0000 0%, #ff6b6b 100%);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ffd700;
+        }
+
+        .slot-machine {
+            background: linear-gradient(135deg, #2a0000 0%, #1a0000 100%);
+            border: 5px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .numbers-display {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .number-ball {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            border: 3px solid #ffd700;
+            animation: spin 0.5s ease-out;
+        }
+
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .white-ball {
+            background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
+            color: #000;
+        }
+
+        .powerball {
+            background: radial-gradient(circle at 30% 30%, #ff0000, #8b0000);
+            color: #fff;
+        }
+
+        .megaball {
+            background: radial-gradient(circle at 30% 30%, #ffd700, #ff8c00);
+            color: #000;
+        }
+
+        .pull-lever {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #1a0000;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            margin: 20px 0;
+        }
+
+        .pull-lever:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ffd700;
+        }
+
+        .pull-lever:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            color: #ffd700;
+        }
+
+        .hot-numbers {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 2px solid #ff6b6b;
+        }
+
+        .hot-numbers h3 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .hot-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .hot-num {
+            padding: 5px 10px;
+            background: #ff0000;
+            color: #ffd700;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .ticket-history {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .ticket-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .ticket-numbers {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .small-ball {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: bold;
+            border: 2px solid #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎰 LOTTERY BANDIT 🎰</h1>
+        <div class="subtitle">Hot Number Generator</div>
+    </div>
+
+    <div class="game-selector">
+        <button class="game-btn active" onclick="selectGame('powerball')">Powerball</button>
+        <button class="game-btn" onclick="selectGame('megamillions')">Mega Millions</button>
+    </div>
+
+    <div class="slot-machine">
+        <div class="numbers-display" id="numbersDisplay">
+            <div class="number-ball white-ball">?</div>
+            <div class="number-ball white-ball">?</div>
+            <div class="number-ball white-ball">?</div>
+            <div class="number-ball white-ball">?</div>
+            <div class="number-ball white-ball">?</div>
+            <div class="number-ball powerball">?</div>
+        </div>
+
+        <button class="pull-lever" onclick="generateTicket()">🎰 PULL THE LEVER! 🎰</button>
+
+        <div class="stats">
+            <div class="stat-row">
+                <span>Tickets Generated:</span>
+                <span id="ticketCount">0</span>
+            </div>
+            <div class="stat-row">
+                <span>Current Game:</span>
+                <span id="currentGame">Powerball</span>
+            </div>
+        </div>
+
+        <div class="hot-numbers">
+            <h3>🔥 Hot Numbers (Most Frequent)</h3>
+            <div class="hot-list" id="hotList"></div>
+        </div>
+    </div>
+
+    <div class="ticket-history" id="ticketHistory"></div>
+
+    <script>
+        // Hot numbers based on historical frequency
+        const hotNumbers = {
+            powerball: {
+                white: [32, 41, 16, 23, 28, 39, 22, 63, 61, 69],
+                bonus: [24, 18, 4, 13, 10, 3, 9, 11, 22, 6]
+            },
+            megamillions: {
+                white: [31, 17, 46, 20, 4, 10, 38, 14, 42, 15],
+                bonus: [22, 11, 18, 9, 13, 24, 3, 7, 4, 10]
+            }
+        };
+
+        let currentGame = 'powerball';
+        let ticketCount = 0;
+        let tickets = [];
+
+        // Load saved data
+        if (localStorage.getItem('lotteryBanditTickets')) {
+            tickets = JSON.parse(localStorage.getItem('lotteryBanditTickets'));
+            ticketCount = tickets.length;
+            document.getElementById('ticketCount').textContent = ticketCount;
+            renderTicketHistory();
+        }
+
+        function selectGame(game) {
+            currentGame = game;
+            document.querySelectorAll('.game-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const gameName = game === 'powerball' ? 'Powerball' : 'Mega Millions';
+            document.getElementById('currentGame').textContent = gameName;
+            
+            // Update display
+            const display = document.getElementById('numbersDisplay');
+            display.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                display.innerHTML += '<div class="number-ball white-ball">?</div>';
+            }
+            const bonusClass = game === 'powerball' ? 'powerball' : 'megaball';
+            display.innerHTML += `<div class="number-ball ${bonusClass}">?</div>`;
+            
+            updateHotNumbers();
+        }
+
+        function updateHotNumbers() {
+            const hotList = document.getElementById('hotList');
+            const hot = hotNumbers[currentGame].white.slice(0, 10);
+            hotList.innerHTML = hot.map(n => `<span class="hot-num">${n}</span>`).join('');
+        }
+
+        function weightedRandom(numbers, weights) {
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < numbers.length; i++) {
+                random -= weights[i];
+                if (random <= 0) return numbers[i];
+            }
+            return numbers[numbers.length - 1];
+        }
+
+        function generateTicket() {
+            const maxWhite = currentGame === 'powerball' ? 69 : 70;
+            const maxBonus = currentGame === 'powerball' ? 26 : 25;
+            
+            const hot = hotNumbers[currentGame].white;
+            const numbers = [];
+            
+            // Generate 5 white balls using hot number weighting
+            while (numbers.length < 5) {
+                let num;
+                if (Math.random() < 0.7 && numbers.length < 3) {
+                    // 70% chance to pick from hot numbers for first 3
+                    num = hot[Math.floor(Math.random() * hot.length)];
+                } else {
+                    // Use clustering around hot numbers
+                    const baseNum = hot[Math.floor(Math.random() * hot.length)];
+                    const offset = Math.floor(Math.random() * 5) - 2;
+                    num = Math.max(1, Math.min(maxWhite, baseNum + offset));
+                }
+                
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
+            }
+            
+            numbers.sort((a, b) => a - b);
+            
+            // Generate bonus ball (heavily weighted toward hot bonus numbers)
+            let bonus;
+            if (Math.random() < 0.8) {
+                const hotBonus = hotNumbers[currentGame].bonus;
+                bonus = hotBonus[Math.floor(Math.random() * Math.min(5, hotBonus.length))];
+            } else {
+                bonus = Math.floor(Math.random() * maxBonus) + 1;
+            }
+            
+            // Animate and display
+            animateNumbers(numbers, bonus);
+            
+            // Save ticket
+            const ticket = {
+                game: currentGame,
+                numbers: numbers,
+                bonus: bonus,
+                date: new Date().toLocaleString()
+            };
+            
+            tickets.unshift(ticket);
+            if (tickets.length > 20) tickets.pop();
+            localStorage.setItem('lotteryBanditTickets', JSON.stringify(tickets));
+            
+            ticketCount++;
+            document.getElementById('ticketCount').textContent = ticketCount;
+            
+            renderTicketHistory();
+        }
+
+        function animateNumbers(numbers, bonus) {
+            const display = document.getElementById('numbersDisplay');
+            const bonusClass = currentGame === 'powerball' ? 'powerball' : 'megaball';
+            
+            display.innerHTML = '';
+            numbers.forEach(num => {
+                const ball = document.createElement('div');
+                ball.className = 'number-ball white-ball';
+                ball.textContent = num;
+                display.appendChild(ball);
+            });
+            
+            const bonusBall = document.createElement('div');
+            bonusBall.className = `number-ball ${bonusClass}`;
+            bonusBall.textContent = bonus;
+            display.appendChild(bonusBall);
+        }
+
+        function renderTicketHistory() {
+            const history = document.getElementById('ticketHistory');
+            if (tickets.length === 0) {
+                history.innerHTML = '';
+                return;
+            }
+            
+            history.innerHTML = '<h2 style="color: #ffd700; margin-bottom: 15px;">📋 Recent Tickets</h2>';
+            
+            tickets.slice(0, 10).forEach(ticket => {
+                const card = document.createElement('div');
+                card.className = 'ticket-card';
+                
+                const gameName = ticket.game === 'powerball' ? 'Powerball' : 'Mega Millions';
+                const bonusClass = ticket.game === 'powerball' ? 'powerball' : 'megaball';
+                
+                card.innerHTML = `
+                    <div style="color: #ff6b6b; font-weight: bold;">${gameName} - ${ticket.date}</div>
+                    <div class="ticket-numbers">
+                        ${ticket.numbers.map(n => `<div class="small-ball white-ball">${n}</div>`).join('')}
+                        <div class="small-ball ${bonusClass}">${ticket.bonus}</div>
+                    </div>
+                `;
+                
+                history.appendChild(card);
+            });
+        }
+
+        // Initialize
+        updateHotNumbers();
+        
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .catch(err => console.log('Service worker registration failed:', err));
+        }
+    </script>
+</body>
+</html>
