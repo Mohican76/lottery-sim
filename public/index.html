@@ -162,6 +162,33 @@
             color: #ffd700;
         }
 
+        .hot-numbers {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 2px solid #ff6b6b;
+        }
+
+        .hot-numbers h3 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .hot-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .hot-num {
+            padding: 5px 10px;
+            background: #ff0000;
+            color: #ffd700;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
         .ticket-history {
             margin-top: 20px;
             width: 100%;
@@ -194,37 +221,12 @@
             font-weight: bold;
             border: 2px solid #ffd700;
         }
-
-        .mode-toggle {
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-
-        .mode-btn {
-            padding: 10px 20px;
-            margin: 0 5px;
-            font-size: 1em;
-            font-weight: bold;
-            border: 2px solid #ffd700;
-            background: rgba(255, 215, 0, 0.2);
-            color: #ffd700;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .mode-btn.active {
-            background: #ffd700;
-            color: #1a0000;
-        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎰 LOTTERY BANDIT 🎰</h1>
-        <div class="subtitle">Smart Number Generator</div>
+        <div class="subtitle">Hot Number Generator</div>
     </div>
 
     <div class="game-selector">
@@ -233,12 +235,6 @@
     </div>
 
     <div class="slot-machine">
-        <div class="mode-toggle">
-            <span style="color: #ffd700; margin-right: 10px;">Generation Mode:</span>
-            <button class="mode-btn active" onclick="setMode('random')">Truly Random</button>
-            <button class="mode-btn" onclick="setMode('hot')">Hot Numbers</button>
-        </div>
-
         <div class="numbers-display" id="numbersDisplay">
             <div class="number-ball white-ball">?</div>
             <div class="number-ball white-ball">?</div>
@@ -259,10 +255,11 @@
                 <span>Current Game:</span>
                 <span id="currentGame">Powerball</span>
             </div>
-            <div class="stat-row">
-                <span>Mode:</span>
-                <span id="currentMode">Truly Random</span>
-            </div>
+        </div>
+
+        <div class="hot-numbers">
+            <h3>🔥 Hot Numbers (Most Frequent)</h3>
+            <div class="hot-list" id="hotList"></div>
         </div>
     </div>
 
@@ -282,7 +279,6 @@
         };
 
         let currentGame = 'powerball';
-        let currentMode = 'random';
         let ticketCount = 0;
         let tickets = [];
 
@@ -298,10 +294,10 @@
             currentGame = game;
             document.querySelectorAll('.game-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-
+            
             const gameName = game === 'powerball' ? 'Powerball' : 'Mega Millions';
             document.getElementById('currentGame').textContent = gameName;
-
+            
             // Update display
             const display = document.getElementById('numbersDisplay');
             display.innerHTML = '';
@@ -310,102 +306,65 @@
             }
             const bonusClass = game === 'powerball' ? 'powerball' : 'megaball';
             display.innerHTML += `<div class="number-ball ${bonusClass}">?</div>`;
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
             
-            const modeName = mode === 'random' ? 'Truly Random' : 'Hot Numbers';
-            document.getElementById('currentMode').textContent = modeName;
+            updateHotNumbers();
         }
 
-        function generateTrulyRandom(max, count) {
-            const numbers = [];
-            while (numbers.length < count) {
-                const num = Math.floor(Math.random() * max) + 1;
-                if (!numbers.includes(num)) {
-                    numbers.push(num);
-                }
-            }
-            return numbers.sort((a, b) => a - b);
+        function updateHotNumbers() {
+            const hotList = document.getElementById('hotList');
+            const hot = hotNumbers[currentGame].white.slice(0, 10);
+            hotList.innerHTML = hot.map(n => `<span class="hot-num">${n}</span>`).join('');
         }
 
-        function generateHotBiased(max, count) {
-            const hot = hotNumbers[currentGame].white;
-            const numbers = [];
-
-            while (numbers.length < count) {
-                let num;
-                if (Math.random() < 0.6 && numbers.length < 3) {
-                    // 60% chance to pick from hot numbers for first 3
-                    num = hot[Math.floor(Math.random() * hot.length)];
-                } else {
-                    // Use clustering around hot numbers
-                    const baseNum = hot[Math.floor(Math.random() * hot.length)];
-                    const offset = Math.floor(Math.random() * 5) - 2;
-                    num = Math.max(1, Math.min(max, baseNum + offset));
-                }
-
-                if (!numbers.includes(num)) {
-                    numbers.push(num);
-                }
+        function weightedRandom(numbers, weights) {
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < numbers.length; i++) {
+                random -= weights[i];
+                if (random <= 0) return numbers[i];
             }
-
-            return numbers.sort((a, b) => a - b);
+            return numbers[numbers.length - 1];
         }
 
         function generateTicket() {
             const maxWhite = currentGame === 'powerball' ? 69 : 70;
             const maxBonus = currentGame === 'powerball' ? 26 : 25;
-
-            let numbers;
             
-            // Generate based on mode
-            if (currentMode === 'random') {
-                // TRULY RANDOM - any number from 1 to maxWhite with equal probability
-                numbers = generateTrulyRandom(maxWhite, 5);
-            } else {
-                // HOT NUMBERS MODE - biased toward historically frequent numbers
-                numbers = generateHotBiased(maxWhite, 5);
+            const numbers = [];
+            while (numbers.length < 5) {
+                const num = Math.floor(Math.random() * maxWhite) + 1;
+                if (num < 1 || numbers.includes(num)) continue;
+                numbers.push(num);
             }
-
-            // Generate bonus ball
-            let bonus;
-            if (currentMode === 'hot' && Math.random() < 0.7) {
-                const hotBonus = hotNumbers[currentGame].bonus;
-                bonus = hotBonus[Math.floor(Math.random() * Math.min(5, hotBonus.length))];
-            } else {
-                bonus = Math.floor(Math.random() * maxBonus) + 1;
-            }
-
+            numbers.sort((a, b) => a - b);
+            
+            const bonus = Math.floor(Math.random() * maxBonus) + 1;
             // Animate and display
             animateNumbers(numbers, bonus);
-
+            
             // Save ticket
             const ticket = {
                 game: currentGame,
-                mode: currentMode,
                 numbers: numbers,
                 bonus: bonus,
                 date: new Date().toLocaleString()
             };
-
+            
             tickets.unshift(ticket);
             if (tickets.length > 20) tickets.pop();
             localStorage.setItem('lotteryBanditTickets', JSON.stringify(tickets));
-
+            
             ticketCount++;
             document.getElementById('ticketCount').textContent = ticketCount;
-
+            
             renderTicketHistory();
         }
 
         function animateNumbers(numbers, bonus) {
             const display = document.getElementById('numbersDisplay');
             const bonusClass = currentGame === 'powerball' ? 'powerball' : 'megaball';
-
+            
             display.innerHTML = '';
             numbers.forEach(num => {
                 const ball = document.createElement('div');
@@ -413,7 +372,7 @@
                 ball.textContent = num;
                 display.appendChild(ball);
             });
-
+            
             const bonusBall = document.createElement('div');
             bonusBall.className = `number-ball ${bonusClass}`;
             bonusBall.textContent = bonus;
@@ -426,32 +385,31 @@
                 history.innerHTML = '';
                 return;
             }
-
+            
             history.innerHTML = '<h2 style="color: #ffd700; margin-bottom: 15px;">📋 Recent Tickets</h2>';
-
+            
             tickets.slice(0, 10).forEach(ticket => {
                 const card = document.createElement('div');
                 card.className = 'ticket-card';
-
+                
                 const gameName = ticket.game === 'powerball' ? 'Powerball' : 'Mega Millions';
                 const bonusClass = ticket.game === 'powerball' ? 'powerball' : 'megaball';
-                const modeName = ticket.mode === 'random' ? 'Random' : 'Hot';
-
+                
                 card.innerHTML = `
-                    <div style="color: #ff6b6b; font-weight: bold;">${gameName} (${modeName}) - ${ticket.date}</div>
+                    <div style="color: #ff6b6b; font-weight: bold;">${gameName} - ${ticket.date}</div>
                     <div class="ticket-numbers">
                         ${ticket.numbers.map(n => `<div class="small-ball white-ball">${n}</div>`).join('')}
                         <div class="small-ball ${bonusClass}">${ticket.bonus}</div>
                     </div>
                 `;
-
+                
                 history.appendChild(card);
             });
         }
 
         // Initialize
-        renderTicketHistory();
-
+        updateHotNumbers();
+        
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js')
